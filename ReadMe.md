@@ -9,4 +9,3 @@ con definizione chiara degli **attributi** e vari **livelli**.
 - **SEGMENTATION**
     - Spiegare a prof infattibilità di rifare sondaggio → Anche rimandandolo sarebbe lo stesso sample perchè lo manderemmo alle stesse persone
     - Come gestire **PCA**
-    - Capire se utile e fattibile **Convenience Sampling**
