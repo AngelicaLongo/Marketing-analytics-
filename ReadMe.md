@@ -5,4 +5,4 @@
   - Eventuale segmentation con la conjoint
 
 - **SEGMENTATION**
-    - Rileggere commenti finali e dovrebbe essere finita
+  - Rileggere commenti finali e dovrebbe essere finita
