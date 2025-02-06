@@ -1,0 +1,1059 @@
+<html>
+<head>
+<title>Conjoint.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #8c8c8c; font-style: italic;}
+.s1 { color: #080808;}
+.s2 { color: #080808;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+Conjoint.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% md 
+</span><span class="s1"># **CONJOINT ANALYSIS** 
+--- 
+## Table of Contents 
+ 
+### 1. Data Collection 
+- 1.1. Product Selection and Attribute Definition 
+- 1.1. Bundles' Choice 
+ 
+### 2. Data Pre-Processing 
+- 2.1. Data Manipulation 
+- 2.2. EDA Analysis 
+  - 2.2.1. Demographic Variables 
+  - 2.2.2. Consumption Habits 
+- 2.3. Potential Customers 
+ 
+### 3. Conjoint Analysis 
+- 3.1. Dataset Creation and Adjustments 
+- 3.2. Analysis 
+  - 3.2.1. Single Respondent 
+  - 3.2.2. Total Conjoint 
+  - 3.2.3. Existing Products Comparison 
+  - 3.2.4. Attributes' Influences 
+- 3.3. Market Share Estimation 
+  - 3.3.1. Market Shares Using the Share-of-Preference Rule 
+  - 3.3.2. Creating a Competitive Market Scenario 
+  - 3.3.3. Market Shares Using the First-Choice Rule 
+- 3.4. Potential Customers Analysis 
+ 
+### 4. Choice-Based Conjoint Analysis 
+- 4.3.1. Survey Design and Data Collection 
+- 4.3.2. Analysis of Results 
+- 4.3.3. Market Shares 
+ 
+### 5. Conclusion 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+**Conjoint Analysis** is a marketing research technique used to understand how consumers evaluate and choose products based on various characteristics (attributes and levels). The goal is to measure the value that consumers place on each attribute, helping companies design products that better align with market preferences. 
+ 
+In this context, our analysis specifically aims to evaluate whether the introduction of a B2C product (**fish skewer**) would be viable for MarePiù, given that the company currently operates primarily in the B2B market. By exploring consumer preferences through Conjoint Analysis, we can gain detailed insights into which combinations of attributes are most appreciated by consumers.  
+</span><span class="s0">#%% 
+</span><span class="s2">suppressMessages(library(radiant)) 
+suppressMessages(library(tidyverse)) 
+suppressMessages(library(ggplot2)) 
+suppressMessages(library(dplyr)) 
+suppressMessages(library(tidyr)) 
+suppressMessages(library(gridExtra)) 
+suppressMessages(library(reshape2)) 
+suppressMessages(library(readxl)) 
+#No errors during the package loading -&gt; suppressMessages() function to avoid displaying the warning, ensuring a smoother flow of the notebook. 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+ 
+## **1. Data collection** 
+</span><span class="s0">#%% md 
+</span><span class="s1">To collect the data, we designed a survey using Google Forms and distributed it via a link to our family and friends. 
+ 
+The questionnaire consists of three sections:   
+- The first section gathers **demographic information** such as age, education level, and other relevant details.   
+- The second section explores **consumption habits**, focusing on the frequency of fish consumption, both in general and specifically for frozen fish.   
+- The core part of the survey, designed for the conjoint analysis, asks respondents to **evaluate in a range 0 to 10 different fish skewers** based on various attributes. 
+ 
+We collected a total of **122 responses**, of which **95 were from frozen fish consumers** who provided the required evaluations for the analysis. 
+ 
+--- 
+</span><span class="s0">#%% md 
+</span><span class="s1">### **1.1.  Product Selection and Attribute Definition** 
+ 
+The product was selected for the conjoint analysis because the company under consideration offers *fish skewers* in various types for the **B2B** market. Our objective is to identify the best combination of attributes to introduce into the **B2C** market. 
+ 
+To achieve this, we selected certain characteristics already listed on the **Marepiù** website and used them as attributes for the study.   
+ 
+Additionally, we incorporated other characteristics based on insights from our previous **segmentation analysis**, which highlighted the necessity of diversification in **packaging format** and **cooking time**. Given these findings, we decided to include them in the conjoint analysis. 
+ 
+The **price** was excluded from the study because we lacked information on the company's production costs. Using generic price ranges (e.g., high, medium, low) would not have provided meaningful or actionable insights for the conjoint analysis. 
+ 
+ 
+Attributes and Levels: 
+- **Panatura** (nessuna, panko, gratinati) 
+- **Tipo di pesce** (gambero, salmone, calamaro) 
+- **Tempo di preparazione** (meno di 8 min, tra 8 e 15 min, più di 15 min) 
+- **Formato confezione** (monoporzione, doppia porzione, formato famiglia) 
+- **Spezie** (nessuna, prezzemolo e basilico, salvia e rosmarino) 
+ 
+--- 
+</span><span class="s0">#%% md 
+</span><span class="s1">### **1.1. Bundles' Choice** 
+</span><span class="s0">#%% md 
+</span><span class="s1">To determine **how many** and **which** bundles to include in the survey, we used the *DOE (Design of Experiments)* function, which helps generate random combinations of attributes and understand the optimal number of bundles to propose, in order to avoid overwhelming the respondents. 
+</span><span class="s0">#%% 
+</span><span class="s2">data.attribute1 &lt;- &quot;Panatura; Nessuna; Panko; Gratinati&quot; 
+data.attribute2 &lt;- &quot;Tipo di pesce; Gambero; Salmone; Calamaro&quot; 
+data.attribute3 &lt;- &quot;Tempo di Preparazione; Meno di 8; Tra 8 e 15; Più di 15&quot; 
+data.attribute4 &lt;- &quot;Formato confezione; monoporzione; doppia porzione; formato famiglia&quot; 
+data.attribute5 &lt;- 'Spezie; Nessuna; Prezzemolo e Basilico; Salvia e Rosmarino' 
+ 
+ 
+data.attributes &lt;- c(data.attribute1, data.attribute2, data.attribute3, data.attribute4, data.attribute5) 
+</span><span class="s0">#%% 
+</span><span class="s2">summary(doe(data.attributes, seed = 42)) 
+</span><span class="s0">#%% md 
+</span><span class="s1">The optimal number of bundles to propose was found to be **18**, as it corresponds to a **D-efficiency of 1**, meaning that the selection of bundles is balanced and complete when describing different attributes: 
+</span><span class="s0">#%% 
+</span><span class="s2">design_efficiency &lt;- data.frame( 
+  Trials = c(11, 12, 13, 14, 15, 16, 17, 18), 
+  D_efficiency = c(0.554, 0.731, 0.651, 0.704, 0.653, 0.703, 0.352, 1.000), 
+  Balanced = c(FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE) 
+) 
+ 
+design_efficiency 
+</span><span class="s0">#%% md 
+</span><span class="s1">Now, we proceed with the exact identification of the **18 bundles**. 
+</span><span class="s0">#%% 
+</span><span class="s2">summary(doe(data.attributes, seed = 42, trials = 18)) 
+</span><span class="s0">#%% md 
+</span><span class="s1">These are the 18 bundles to which the respondents will need to assign a **rating from 1 to 10** in the questionnaire: 
+</span><span class="s0">#%% 
+</span><span class="s2">bundles &lt;- data.frame( 
+  Panatura = c(&quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Panko&quot;, &quot;Panko&quot;, &quot;Panko&quot;, &quot;Panko&quot;, &quot;Panko&quot;, &quot;Panko&quot;, &quot;Gratinati&quot;, &quot;Gratinati&quot;, &quot;Gratinati&quot;, &quot;Gratinati&quot;, &quot;Gratinati&quot;, &quot;Gratinati&quot;), 
+  Tipo_di_pesce = c(&quot;Gambero&quot;, &quot;Gambero&quot;, &quot;Salmone&quot;, &quot;Salmone&quot;, &quot;Calamaro&quot;, &quot;Calamaro&quot;, &quot;Gambero&quot;, &quot;Gambero&quot;, &quot;Salmone&quot;, &quot;Salmone&quot;, &quot;Calamaro&quot;, &quot;Calamaro&quot;, &quot;Gambero&quot;, &quot;Gambero&quot;, &quot;Salmone&quot;, &quot;Salmone&quot;, &quot;Calamaro&quot;, &quot;Calamaro&quot;), 
+  Tempo_di_Preparazione = c(&quot;Meno_di_8&quot;, &quot;Tra_8_e_15&quot;, &quot;Meno_di_8&quot;, &quot;Più_di_15&quot;, &quot;Tra_8_e_15&quot;, &quot;Più_di_15&quot;, &quot;Meno_di_8&quot;, &quot;Più_di_15&quot;, &quot;Tra_8_e_15&quot;, &quot;Più_di_15&quot;, &quot;Meno_di_8&quot;, &quot;Tra_8_e_15&quot;, &quot;Tra_8_e_15&quot;, &quot;Più_di_15&quot;, &quot;Meno_di_8&quot;, &quot;Tra_8_e_15&quot;, &quot;Meno_di_8&quot;, &quot;Più_di_15&quot;), 
+  Formato_confezione = c(&quot;formato_famiglia&quot;, &quot;doppia_porzione&quot;, &quot;monoporzione&quot;, &quot;monoporzione&quot;, &quot;formato_famiglia&quot;, &quot;doppia_porzione&quot;, &quot;doppia_porzione&quot;, &quot;formato_famiglia&quot;, &quot;formato_famiglia&quot;, &quot;doppia_porzione&quot;, &quot;monoporzione&quot;, &quot;monoporzione&quot;, &quot;monoporzione&quot;, &quot;monoporzione&quot;, &quot;formato_famiglia&quot;, &quot;doppia_porzione&quot;, &quot;doppia_porzione&quot;, &quot;formato_famiglia&quot;), 
+  Spezie = c(&quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Salvia_e_Rosmarino&quot;, &quot;Prezzemolo_e_Basilico&quot;, &quot;Salvia_e_Rosmarino&quot;, &quot;Prezzemolo_e_Basilico&quot;, &quot;Salvia_e_Rosmarino&quot;, &quot;Prezzemolo_e_Basilico&quot;, &quot;Salvia_e_Rosmarino&quot;, &quot;Prezzemolo_e_Basilico&quot;, &quot;Salvia_e_Rosmarino&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;Prezzemolo_e_Basilico&quot;) 
+) 
+ 
+bundles 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+## **2. Data Pre-Processing** 
+</span><span class="s0">#%% 
+</span><span class="s2">#The answers of the questionnaire are imported 
+file_csv &lt;- &quot;data/conjoint_rawdata.csv&quot; 
+survey_raw &lt;- read.csv(file_csv) 
+head(survey_raw) 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+#### **2.1. Data Manipulation** 
+</span><span class="s0">#%% md 
+</span><span class="s1">We removed useless columns... 
+</span><span class="s0">#%% 
+</span><span class="s2">survey_raw &lt;- survey_raw[, !colnames(survey_raw) %in% c(&quot;Informazioni.cronologiche&quot;)] 
+</span><span class="s0">#%% md 
+</span><span class="s1">.. and renamed the remaining ones in order to simplify the analysis. 
+</span><span class="s0">#%% 
+</span><span class="s2">renamed_col &lt;- c( 
+  'In.che.genere.ti.identifichi.' = 'gender', 
+  'Qual.è.la.tua.età.' = 'age', 
+  'Qual.è.la.tua.occupazione.' = 'occupation', 
+  'Da.quante.persone.è.composto.il.tuo.nucleo.familiare.' = 'family_size', 
+  'Dove.abiti.al.momento.' = 'location', 
+  'Quanto.spesso.consumi.pesce.' = 'fish_consumption_frequency', 
+  'In.media..quante.delle.volte.che.consumi.pesce..il.pesce.è.surgelato.' = 'frozen_fish_consumption_frequency', 
+  'Che.tipo.di.pesce.surgelato.consumi...Puoi.selezionare.più.risposte.' = 'frozen_fish_type', 
+  'Hai.una.marca.di.fiducia.per.l.acquisto.di.prodotti.di.pesce.surgelati.' = 'trusted_brand', 
+  'Quali.caratteristiche.di.una.marca.ti.portano.a.sceglierla.come.la.tua.marca.di.fiducia..' = 'reason_to_trust', 
+  'Tendi.ad.acquistare.sempre.il.prodotto.di.pesce.surgelato.più.economico.' = 'buy_cheapest_frozen_fish', 
+  'Qual.è.la.ragione.principale.per.cui.non.consumi.pesce.' = 'reason_to_not_consume', 
+  'A.quali.condizioni.considereresti.l.acquisto.di.prodotti.di.pesce.surgelati.' = 'conditions_to_consume', 
+  'X1..Spiedino.di.Gambero.con.nessuna.panatura.e.nessuna.spezia..pronto.in.meno.di.8.minuti.e.venduto.in.confezioni.famiglia' = 'Gambero_Nessuna_Nessuna_MenoDi8_Famiglia', 
+  'X2..Spiedino.di.Gambero.con.nessuna.panatura.ma.con.Salvia.e.Rosmarino..pronto.in.8.15.minuti.e.venduto.in.confezioni.per.2.persone' = 'Gambero_Nessuna_SalviaRosmarino_8-15_Doppia', 
+  'X3..Spiedino.di.salmone.con.nessuna.panatura.ma.con.Prezzemolo.e.Basilico..pronto.in.meno.di.8.minuti.e.venduto.in.monoporzioni' = 'Salmone_Nessuna_PrezzemoloBasilico_MenoDi8_Mono', 
+  'X4..Spiedino.di.Salmone.con.nessuna.panatura.e.nessuna.spezia..pronto.in.Più.di.15.minuti.e.venduto.in.Monoporzioni' = 'Salmone_Nessuna_Nessuna_PiùDi15_Mono', 
+  'X5..Spiedino.di.Calamaro.con.Nessuna.panatura.ma.con.Prezzemolo.e.Basilico..pronto.in.8.15.minuti.e.venduto.in.confezioni.famiglia' = 'Calamaro_Nessuna_PrezzemoloBasilico_8-15_Famiglia', 
+  'X6..Spiedino.di.Calamaro.con.nessuna.panatura.ma.con.Salvia.e.Rosmarino..pronto.in.più.di.15.minuti.e.venduto.in.confezioni.da.due.persone' = 'Calamaro_Nessuna_SalviaRosmarino_PiùDi15_Doppia', 
+  'X7..Spiedino.di.Gambero.croccanti.al.Panko.e.con.Prezzemolo.e.Basilico..pronto.in.meno.di.8.minuti.e.venduto.in.confezioni.per.due.persone.NB..La.panatura..Panko..è.fatto.con.la.sola.mollica.di.pane.bianco.e.rende.le.fritture.particolarmente.croccanti' = 'Gambero_Panko_PrezzemoloBasilico_MenoDi8_Doppia', 
+  'X8..Spiedino.di.Gambero.croccanti.al.Panko.e.nessuna.spezia..pronto.in.più.di.15.minuti.e.venduto.in.confezioni.famiglia' = 'Gambero_Panko_Nessuna_PiùDi15_Famiglia', 
+  'X9..Spiedino.di..Salmone.croccanti.al.Panko.e.con.Salvia.e.Rosmarino..pronto.in.8.15.minuti.e.venduto.in.confezioni.famiglia' = 'Salmone_Panko_SalviaRosmarino_8-15_Famiglia', 
+  'X10..Spiedino.di.Salmone.croccanti.al.Panko.e.con.Prezzemolo.e.Basilico..pronto.in.più.di.15.minuti.e.venduto.in.confezioni.per.due.persone' = 'Salmone_Panko_PrezzemoloBasilico_PiùDi15_Doppia', 
+  'X11..Spiedino.di.Calamaro.croccanti.al.Panko.e.con.Salvia.e.Rosmarino..pronto.in.meno.di.8.minuti.e.venduto.in.monoporzioni' = 'Calamaro_Panko_SalviaRosmarino_MenoDi8_Mono', 
+  'X12..Spiedino.di.Calamaro.croccanti.al.Panko.e.con.nessuna.spezia..pronto.in.8.15.minuti.e.venduto.in.monoporzioni' = 'Calamaro_Panko_Nessuna_8-15_Mono', 
+  'X13..Spiedino.di.Gambero.Gratinato.con.Prezzemolo.e.Basilico..pronto.in.8.15.minuti.e.venduto.in.monoporzioni' = 'Gambero_Gratinato_PrezzemoloBasilico_8-15_Mono', 
+  'X14..Spiedino.di.Gambero.Gratinato.con.Salvia.e.Rosmarino..pronto.in.più.di.15.minuti.e.venduto.in.monoporzioni' = 'Gambero_Gratinato_SalviaRosmarino_PiùDi15_Mono', 
+  'X15..Spiedino.di.Salmone.Gratinato.con.Salvia.e.Rosmarino..pronto.in.meno.di.8.minuti.e.venduto.in.confezioni.famiglia' = 'Salmone_Gratinato_SalviaRosmarino_MenoDi8_Famiglia', 
+  'X16..Spiedino.di.Salmone.Gratinato.con.nessuna.spezia..pronto.in.8.15.minuti.e.venduto.in.confezioni.per.due.persone' = 'Salmone_Gratinato_Nessuna_8-15_Doppia', 
+  'X17..Spiedino.di.Calamaro.Gratinato.con.nessuna.spezia..pronto.in.meno.di.8.minuti.e.venduto.in.confezioni.per.due.persone' = 'Calamaro_Gratinato_Nessuna_MenoDi8_Doppia', 
+  'X18..Spiedino.di.Calamaro.Gratinato.con.Prezzemolo.e.Basilico..pronto.in.più.di.15.minuti.e.venduto.in.confezioni.famiglia' = 'Calamaro_Gratinato_PrezzemoloBasilico_PiùDi15_Famiglia', 
+  'Quali.sono.le.caratteristiche.che.hanno.influenzato.di.più.la.tua.valutazione...Puoi.selezionare.più.risposte.' = 'major_influences' 
+) 
+ 
+colnames(survey_raw) &lt;- renamed_col[colnames(survey_raw)] 
+</span><span class="s0">#%% 
+</span><span class="s2"># Adjusted dataset 
+head(survey_raw) 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+### **2.2. EDA Analysis** 
+</span><span class="s0">#%% md 
+</span><span class="s1">Some exploratory data analysis to visualize the distribution of answers for demographic and consumption habit variables. 
+</span><span class="s0">#%% md 
+</span><span class="s1">#### **2.2.1 Demographic variables** 
+</span><span class="s0">#%% 
+</span><span class="s2">df &lt;- survey_raw[, 1:5] 
+</span><span class="s0">#%% 
+</span><span class="s2">cat(&quot;Distributions of Demographic Variables:\n&quot;) 
+ 
+p1 &lt;- ggplot(df, aes(x = gender)) + 
+  geom_bar(fill = &quot;steelblue&quot;) + 
+  ggtitle(&quot;Gender&quot;) + 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5)) 
+ 
+p2 &lt;- ggplot(df, aes(x = age)) + 
+  geom_bar(fill = &quot;tomato&quot;) + 
+  ggtitle(&quot;Age&quot;) + 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5)) 
+ 
+p3 &lt;- ggplot(df, aes(x = occupation)) + 
+  geom_bar(fill = &quot;seagreen&quot;) + 
+  ggtitle(&quot;Working status&quot;) + 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5)) 
+ 
+p4 &lt;- ggplot(df, aes(x = family_size)) + 
+  geom_bar(fill = &quot;purple&quot;) + 
+  ggtitle(&quot;Family size&quot;)+ 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5)) 
+ 
+p5 &lt;- ggplot(df, aes(x = location)) + 
+  geom_bar(fill = &quot;goldenrod&quot;) + 
+  ggtitle(&quot;Geographic position&quot;)+ 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5)) 
+ 
+grid.arrange(p1, p2, p3, p4, p5, ncol = 2) 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">Our sample consists primarily of *females*, representing approximately 80% of respondents, with a majority of respondents being *middle-aged* (46-60 years). A significant portion of the sample also includes individuals aged 18-25. Most respondents are *workers* residing in *southern Italy* and on the islands, followed by those in northern Italy. The most common family size ranges from *2 to 4 members*. 
+ 
+Given these considerations, it is clear that our sample is **not representative**, as it is a **convenience sample** obtained through interviews with family and friends. 
+</span><span class="s0">#%% md 
+</span><span class="s1">#### **2.2.2 Consumption Habits** 
+</span><span class="s0">#%% 
+</span><span class="s2">cat(&quot;Distributions of Consumption Habits Variables:\n&quot;) 
+ 
+p6 &lt;- ggplot(survey_raw, aes(x = fish_consumption_frequency)) + 
+  geom_bar(fill = &quot;lightblue&quot;) + 
+  ggtitle(&quot;Fish Consumption Frequency&quot;) + 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5))+ 
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) 
+ 
+p7 &lt;- ggplot(survey_raw, aes(x = frozen_fish_consumption_frequency)) + 
+  geom_bar(fill = &quot;steelblue&quot;) + 
+  ggtitle(&quot;Frozen fish Consumption Frequency&quot;) + 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5))+ 
+  theme(axis.text.x = element_text(angle = 30, hjust = 1)) 
+ 
+grid.arrange(p6, p7, ncol = 2) 
+</span><span class="s0">#%% md 
+</span><span class="s1">In the second graph, the first column represents respondents who don't consume any kind of fish, while the second column are respondents who consume only fresh fish. 
+ 
+In our sample, a significant portion of respondents eat fish at least once a week. However, only a few always consume frozen fish. In fact, the majority of respondents consume it only occasionally compared to their overall fish consumption. 
+</span><span class="s0">#%% 
+</span><span class="s2">table_consumption &lt;- table(survey_raw$fish_consumption_frequency, survey_raw$frozen_fish_consumption_frequency) 
+table_percentage &lt;- prop.table(table_consumption) * 100 
+cat(&quot;Contingency table (percentages):\n&quot;) 
+round(table_percentage, 2) 
+</span><span class="s0">#%% md 
+</span><span class="s1">This table shows the relationship between overall *fish consumption frequency* (rows) and *frozen fish consumption frequency* (columns). It suggests that while fish consumption is regular for many respondents, frozen fish is generally a secondary choice. 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+#### **2.3. Potential Costumers** 
+</span><span class="s0">#%% md 
+</span><span class="s1">We wanted to understand the **percentage of respondents who never eat fish or frozen fish**, as their answers do not provide valuable information for the conjoint analysis. 
+</span><span class="s0">#%% 
+</span><span class="s2">count_mai &lt;- sum(survey_raw$fish_consumption_frequency == &quot;Mai&quot;, na.rm = TRUE) 
+total_rows &lt;- nrow(survey_raw) 
+ 
+percentage_mai &lt;- (count_mai / total_rows) * 100 
+ 
+cat(sprintf(&quot;According to our data, the percentage of respondents who don't eat fish is %.2f%%\n&quot;, percentage_mai)) 
+</span><span class="s0">#%% 
+</span><span class="s2">count_nofrozen &lt;- sum(survey_raw$frozen_fish_consumption_frequency == &quot;Mai&quot;, na.rm = TRUE) 
+total_responses_frozen &lt;- sum(survey_raw$fish_consumption_frequency != &quot;Mai&quot;, na.rm = TRUE) 
+ 
+percentage_nofrozen &lt;- (count_nofrozen / total_responses_frozen) * 100 
+ 
+cat(sprintf(&quot;The percentage of respondents who don't eat frozen fish is %.2f%%\n&quot;, percentage_nofrozen)) 
+</span><span class="s0">#%% md 
+</span><span class="s1">In the survey, we added a question asking if they would consider consuming frozen fish under certain conditions: 
+ 
+_&quot;A quali condizioni considereresti l'acquisto di prodotti di pesce surgelati?&quot;_ 
+</span><span class="s0">#%% 
+</span><span class="s2">unique_values_conditions &lt;- unique(survey_raw$conditions_to_consume)  
+ 
+unique_values_conditions 
+</span><span class="s0">#%% md 
+</span><span class="s1">In the sample, there are **no particular conditions for acquiring new potential customers**. However, it is important to note the significance of transparency towards the customer. Some respondents state that they would buy frozen fish products if they were reassured about the origin and the freezing method of the product. 
+</span><span class="s0">#%% md 
+</span><span class="s1">After obtaining these two results, we can compute the percentage of potential customers. 
+</span><span class="s0">#%% 
+</span><span class="s2">eat_fish &lt;- total_rows * (1 - percentage_mai / 100) 
+potential_customers &lt;- eat_fish * (1 - percentage_nofrozen / 100) 
+percentage_potential_customers &lt;- round((potential_customers / total_rows) * 100, 2) 
+ 
+cat(sprintf(&quot;The percentage of potential customers is %.2f%% of the sample.\n&quot;, percentage_potential_customers)) 
+</span><span class="s0">#%% md 
+</span><span class="s1">Also, we wanted to understand how many people would be willing to pay a higher price for frozen fish products characterized by higher quality: 
+ 
+_&quot;Tendi ad acquistare sempre il prodotto di pesce surgelato più economico?&quot;_ 
+</span><span class="s0">#%% 
+</span><span class="s2">count_cheapest &lt;- sum(survey_raw$buy_cheapest_frozen_fish == &quot;Sì&quot;, na.rm = TRUE) 
+percentage_cheapest &lt;- (count_cheapest / total_responses_frozen) * 100 
+ 
+cat(sprintf(&quot;The percentage of people who always buy the cheapest option is %.2f%% of the sample.\n&quot;, percentage_cheapest)) 
+</span><span class="s0">#%% md 
+</span><span class="s1">This finding suggests that **price sensitivity** is a key factor in the market, as we already understood by segmentation analysis.  
+ 
+The **21,05%** of our sample states that they always purchase the most affordable option. 
+ 
+If the company wants to attract customers who prioritize price, it must remain competitive by offering budget-friendly options or investing sufficiently in marketing to convince them that its products are worth the extra cost. 
+</span><span class="s0">#%% md 
+</span><span class="s1">We also wanted to understand the reasons why a customer considers a particular brand to be their trusted brand: 
+ 
+_&quot;Quali caratteristiche di una marca ti portano a sceglierla come la tua marca di fiducia?&quot;_ 
+</span><span class="s0">#%% 
+</span><span class="s2">unique_values_trust &lt;- unique(survey_raw$reason_to_trust)  
+ 
+unique_values_trust 
+</span><span class="s0">#%% md 
+</span><span class="s1">Based on the responses, &quot;**quality**&quot; and &quot;**taste**&quot; are frequently mentioned as key factors in choosing a trusted brand. This is a positive sign for our company, as two of its strengths are the high quality and excellent taste of its products. These attributes could serve as a strong foundation for building brand loyalty among potential new customers. 
+ 
+Another recurring theme is &quot;**provenance**&quot; of the fish, highlighting once again the importance of transparency: providing precise details on the origin of the fish could be a crucial factor in gaining consumers' trust. 
+</span><span class="s0">#%% md 
+</span><span class="s1">After this initial analysis, we will consider only those who consume frozen fish to proceed with our work. 
+</span><span class="s0">#%% 
+</span><span class="s2">filtered_survey_raw &lt;- survey_raw %&gt;% 
+  filter(!(fish_consumption_frequency == 'Mai' | frozen_fish_consumption_frequency == 'Mai')) 
+</span><span class="s0">#%% md 
+</span><span class="s1">Analysis of **demographic characteristics** of our potential consumers: 
+</span><span class="s0">#%% 
+</span><span class="s2">cat(&quot;Distributions of Demographic Variables after non-consumers removal:\n&quot;) 
+ 
+df2 &lt;- filtered_survey_raw[, 1:5] 
+p1 &lt;- ggplot(df2, aes(x = gender)) + 
+  geom_bar(fill = &quot;steelblue&quot;) + 
+  ggtitle(&quot;Gender&quot;) + 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5)) 
+ 
+p2 &lt;- ggplot(df2, aes(x = age)) + 
+  geom_bar(fill = &quot;tomato&quot;) + 
+  ggtitle(&quot;Age&quot;) + 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5)) 
+ 
+p3 &lt;- ggplot(df2, aes(x = occupation)) + 
+  geom_bar(fill = &quot;seagreen&quot;) + 
+  ggtitle(&quot;Working status&quot;) + 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5)) 
+ 
+p4 &lt;- ggplot(df2, aes(x = family_size)) + 
+  geom_bar(fill = &quot;purple&quot;) + 
+  ggtitle(&quot;Family size&quot;)+ 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5)) 
+ 
+p5 &lt;- ggplot(df2, aes(x = location)) + 
+  geom_bar(fill = &quot;goldenrod&quot;) + 
+  ggtitle(&quot;Geographic position&quot;)+ 
+  theme_minimal()+ 
+  theme(plot.title = element_text(hjust = 0.5)) 
+ 
+grid.arrange(p1, p2, p3, p4, p5, ncol = 2) 
+</span><span class="s0">#%% md 
+</span><span class="s1">Compared to the previous graphs, these ones show a slight difference in the gender distribution, with a marginal increase in male responses. The age distribution has also changed showing fewer respondents in the 40-60 age group. The working status distribution remains almost unchanged, as does family size.  In terms of geographic location, while Southern Italy still has a strong presence, there is now a significant presence of respondents from Northern Italy. 
+</span><span class="s0">#%% md 
+</span><span class="s1">Analysis of **frozen fish type consumption**: 
+</span><span class="s0">#%% 
+</span><span class="s2">filtered_survey_raw_exploded &lt;- filtered_survey_raw %&gt;% 
+  separate_rows(frozen_fish_type, sep = &quot;;&quot;) %&gt;% 
+  mutate(frozen_fish_type = trimws(tolower(frozen_fish_type))) 
+ 
+p8 &lt;- ggplot(filtered_survey_raw_exploded, aes(x = frozen_fish_type)) + 
+  geom_bar(fill = &quot;darkorange&quot;) + 
+  ggtitle(&quot;Frozen Fish Consumption Frequency&quot;) + 
+  theme_minimal() + 
+  theme( 
+    plot.title = element_text(hjust = 0.5), 
+    axis.text.x = element_text(angle = 30, hjust = 1) 
+  ) + 
+  scale_x_discrete(expand = expansion(mult = 0.2))  
+ 
+p8 
+</span><span class="s0">#%% md 
+</span><span class="s1">The preferred frozen fish type is &quot;*Tranci/Filetti di pesce*&quot;, followed by &quot;*Condimenti per pasta o riso*&quot; and &quot;*Piatti pronti*&quot;. Although some of the other responses can be included into the ones already citated (e.g. &quot;frutti di mare&quot; in &quot;condimenti per pasta o riso&quot;), this doesn't change the distribution. 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+## **3. Conjoint Analysis** 
+</span><span class="s0">#%% md 
+</span><span class="s1">### **3.1 Dataset creation and adjustments** 
+</span><span class="s0">#%% md 
+</span><span class="s1">We added an **ID** for every respondent. 
+</span><span class="s0">#%% 
+</span><span class="s2">filtered_survey_raw &lt;- filtered_survey_raw %&gt;% 
+  mutate(id_respondent = 1:n()) 
+</span><span class="s0">#%% md 
+</span><span class="s1">We selected relevant columns for the conjoint analysis: id_respondent and the 18 bundles. 
+</span><span class="s0">#%% 
+</span><span class="s2">relevant_columns &lt;- c(14:31, ncol(filtered_survey_raw))   
+survey_data &lt;- filtered_survey_raw[, relevant_columns]   
+</span><span class="s0">#%% 
+</span><span class="s2">head(survey_data) 
+</span><span class="s0">#%% md 
+</span><span class="s1">The following steps aim to create the final dataset used for the conjoint analysis: 
+</span><span class="s0">#%% 
+</span><span class="s2"># Transformation of columns forease of analysis 
+columns_to_melt &lt;- names(survey_data)[1:(ncol(survey_data) - 1)]   
+columns_to_keep &lt;- names(survey_data)[ncol(survey_data)]  
+ 
+conjoint_data &lt;- survey_data %&gt;% 
+  pivot_longer(cols = all_of(columns_to_melt),  
+               names_to = &quot;Question&quot;,  
+               values_to = &quot;Rating&quot;) %&gt;% 
+  arrange(id_respondent) 
+ 
+row.names(conjoint_data) &lt;- NULL 
+ 
+ 
+#Split of preferred bundles in order to obtain different answers for each attribute of the bundle 
+split_columns &lt;- strsplit(as.character(conjoint_data$Question), &quot;_&quot;) 
+ 
+split_columns_df &lt;- do.call(rbind, split_columns) 
+colnames(split_columns_df) &lt;- c(&quot;Tipo_di_Pesce&quot;, &quot;Panatura&quot;, &quot;Spezie&quot;, &quot;Tempo_di_Preparazione&quot;, &quot;Formato_Confezione&quot;) 
+ 
+conjoint_data &lt;- cbind(conjoint_data, split_columns_df) 
+ 
+conjoint_data$Question &lt;- NULL 
+ 
+ 
+#The ratings transformed from 0-10 scale to a 0-100 scale for ease of analysis 
+conjoint_data$Rating &lt;- conjoint_data$Rating * 10 
+</span><span class="s0">#%% 
+</span><span class="s2"># FINAL DATASET  
+head(conjoint_data) 
+</span><span class="s0">#%% md 
+</span><span class="s1">The table obtained above allows us to understand the rating given by each respondent for each combination of attributes proposed (=bundle). This will enable us to conduct the conjoint analysis, aiming to understand which characteristics consumers consider most relevant. 
+</span><span class="s0">#%% md 
+</span><span class="s1">The **average of total ratings** is computed to have an idea of general evaluation of products. 
+</span><span class="s0">#%% 
+</span><span class="s2">mean(conjoint_data$Rating, na.rm = TRUE) 
+</span><span class="s0">#%% md 
+</span><span class="s1">We have observed that the average rating of the product considered is **quite low** (43) on a scale from 1 to 100. This could already serve as an indicator that the product may **not be very appealing** in the market for the consumers included in our survey sample.  
+ 
+To better understand this, we plotted the distribution of ratings.The following graph clearly shows that there was a high percentage of **ratings equal to 0** in the responses. 
+</span><span class="s0">#%% 
+</span><span class="s2">ggplot(conjoint_data, aes(x = Rating)) + 
+  geom_histogram(aes(y = ..density..), bins = 30, fill = &quot;skyblue&quot;, color = &quot;black&quot;, alpha = 0.7) + 
+  labs(title = &quot;Distribution of Ratings&quot;, 
+       x = &quot;Rating&quot;, 
+       y = &quot;Density&quot;) + 
+  theme_minimal(base_size = 14) 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+### **3.2 Analysis** 
+</span><span class="s0">#%% md 
+</span><span class="s1">#### **3.2.1 Single Respondent** 
+</span><span class="s0">#%% md 
+</span><span class="s1">Initially, the conjoint function is applied to a **single respondent**, randomly selected, in order to obtain the relative importance of each attribute for that respondent. This step is used to validate the model and understand individual variability. 
+ 
+Additionally, it helps assess whether the analysis for a single respondent generates results that are consistent with the overall analysis. If the results are consistent, then the model is correctly set up. 
+</span><span class="s0">#%% 
+</span><span class="s2">set.seed(12) 
+random_num &lt;- sample(1:95,1) 
+random_num 
+</span><span class="s0">#%% 
+</span><span class="s2">respondent &lt;- conjoint_data %&gt;% filter(id_respondent == random_num) 
+conjoint_respondent &lt;- conjoint(respondent, rvar=&quot;Rating&quot;, evar=c(&quot;Tipo_di_Pesce&quot;, &quot;Panatura&quot;, &quot;Spezie&quot;, &quot;Tempo_di_Preparazione&quot;, &quot;Formato_Confezione&quot;)) 
+summary(conjoint_respondent) 
+</span><span class="s0">#%% md 
+</span><span class="s1">**Visual representation** of Respondent 66 relative preferences for each attribute: 
+</span><span class="s0">#%% 
+</span><span class="s2">plot(conjoint_respondent) 
+</span><span class="s0">#%% md 
+</span><span class="s1">The coefficients of the conjoint analysis represent the utility values assigned to different levels of each attribute relative to the level with a utility of 0. 
+ 
+In this analysis, the levels with utility 0 are: 
+- &quot;Calamaro&quot; for &quot;Tipo_di_Pesce&quot;, 
+- &quot;Gratinato&quot; for &quot;Panatura&quot;, 
+- &quot;Nessuna&quot; for &quot;Spezie&quot;, 
+- &quot;8-15&quot; for &quot;Tempo_di_Preparazione&quot;, 
+- &quot;Doppia&quot; for &quot;Formato_Confezione&quot;. 
+ 
+The **base utility** for this respondent is **1.667**.  
+ 
+From the results, the following considerations can be done: 
+- The preferred type of fish is &quot;Gambero&quot;, followed by &quot;Salmone&quot; and than &quot;Calamaro&quot;.  
+- &quot;Gratinato&quot; is the preferred one, while &quot;Nessuna Panatura&quot; and &quot;Panko&quot; have a negative utility. 
+- Same consideration for &quot;Formato_Confezione&quot;, where &quot;Doppia&quot; is the preferred option. 
+- Both &quot;PrezzemoloBasilico&quot; and &quot;SalviaRosmarino&quot; are preferred than &quot;Nessuna Spezia&quot; with the first level having the highest value. 
+- The preferred &quot;Tempo_di_Preparazione&quot; is the &quot;Meno di 8 min&quot; while &quot;Più di 15&quot; has a value smaller than 0.  
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+#### **3.2.2 Total Conjoint** 
+</span><span class="s0">#%% md 
+</span><span class="s1">Conversion of variables into factors, representing product features and their levels: 
+</span><span class="s0">#%% 
+</span><span class="s2">conjoint_data$Tipo_di_Pesce &lt;- as.factor(conjoint_data$Tipo_di_Pesce) 
+conjoint_data$Panatura &lt;- as.factor(conjoint_data$Panatura) 
+conjoint_data$Spezie &lt;- as.factor(conjoint_data$Spezie) 
+conjoint_data$Tempo_di_Preparazione &lt;- as.factor(conjoint_data$Tempo_di_Preparazione) 
+conjoint_data$Formato_Confezione&lt;- as.factor(conjoint_data$Formato_Confezione) 
+</span><span class="s0">#%% 
+</span><span class="s2">head(conjoint_data) 
+</span><span class="s0">#%% md 
+</span><span class="s1">After evaluating the model for a single respondent, we conduct the **analysis on the overall dataset**, obtaining the average preference of each attribute. 
+</span><span class="s0">#%% 
+</span><span class="s2">conjoint_total &lt;- conjoint(conjoint_data, rvar=&quot;Rating&quot;, evar=c(&quot;Tipo_di_Pesce&quot;, &quot;Panatura&quot;, &quot;Spezie&quot;, &quot;Tempo_di_Preparazione&quot;, &quot;Formato_Confezione&quot;)) 
+</span><span class="s0">#%% 
+</span><span class="s2">summary(conjoint_total) 
+</span><span class="s0">#%% md 
+</span><span class="s1">**Visual representation** of overall relative preferences for each attribute: 
+</span><span class="s0">#%% 
+</span><span class="s2">plot(conjoint_total) 
+</span><span class="s0">#%% md 
+</span><span class="s1">After conducting the conjoint analysis on the entire set of respondents, we noticed that the base utility changes significantly. This could indicate that there is considerable variability in how different consumer segments value the product attributes. A large fluctuation in the base utility may suggest that the product's appeal is not uniform across all respondents, and it might be more appealing to some groups while less appealing to others. 
+</span><span class="s0">#%% md 
+</span><span class="s1">All combinations of attributes are created: 
+</span><span class="s0">#%% 
+</span><span class="s2">profiles.all &lt;- expand.grid(levels(conjoint_data$Tipo_di_Pesce),levels(conjoint_data$Panatura), levels(conjoint_data$Spezie), levels(conjoint_data$Tempo_di_Preparazione), levels(conjoint_data$Formato_Confezione)) 
+profiles.all &lt;- profiles.all %&gt;% rename('Tipo_di_Pesce' = 'Var1', 'Panatura' = 'Var2' , 'Spezie' = 'Var3', 'Tempo_di_Preparazione' = 'Var4', 'Formato_Confezione' = 'Var5') 
+head(profiles.all) 
+</span><span class="s0">#%% md 
+</span><span class="s1">The rating for each combination is predicted: 
+</span><span class="s0">#%% 
+</span><span class="s2">conjoint_prediction &lt;- predict(conjoint_total, profiles.all) %&gt;% arrange(desc(Prediction)) 
+head(conjoint_prediction) 
+</span><span class="s0">#%% md 
+</span><span class="s1">The **highest rating** results to be **52.89** for the following combination: 
+ 
+Spiedino di **gambero**, **Gratinato**, speziato al **prezzemolo e basilico**, pronto in **meno di 8 minuti** e venduto in **confezione doppia**. 
+</span><span class="s0">#%% md 
+</span><span class="s1">The highest rating might be considered low, and there are several possible reasons for this: 
+ 
+1. *Market Appeal*: the product (fish skewer) might not be highly appealing to our sample, as indicated by the low base utility and the distribution of ratings in the conjoint analysis.  
+    
+2. *Attribute Importance*: the attributes considered in the conjoint model might not be significant enough to drive high preference. If the chosen attributes do not strongly influence the decision-making process of consumers, the predicted score will be lower. 
+ 
+3. *Consumer Segmentation*: a lack of differentiation among consumer segments in terms of their preferences could lead to lower predicted scores, as the conjoint model may not capture distinct consumer needs and behaviors effectively. 
+ 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+#### **3.2.3. Existing products comparison** 
+To complete this part of the analysis, we aimed to evaluate the actual product combinations offered by MarePiù to B2B customers and assess their scores. Our objective is to determine which combination of attributes is the best, helping us identify the most viable product to launch on the market.   
+ 
+After establishing that the **&quot;Spiedino di **gambero gratinato speziato al prezzemolo e basilico, pronto in meno di 8 minuti e venduto in confezione doppia&quot;** is generally the best combination, we also want to explore cost-saving opportunities.  
+ 
+Specifically, we aim to identify **existing B2B products** that could be adapted for the **B2C market**, reducing production costs.   
+ 
+To determine which products are already available, we referred to MarePiù’s official website at the following link:   
+[Catalog - MarePiù Food Service](https://www.marepiusrl.com/catalogo-food-service/)  
+</span><span class="s0">#%% 
+</span><span class="s2">find_rating &lt;- function(tipo, panatura, spezie, tempo, formato) { 
+  filtro &lt;- conjoint_prediction[conjoint_prediction$Tipo_di_Pesce == tipo &amp; 
+                 conjoint_prediction$Panatura == panatura &amp; 
+                 conjoint_prediction$Spezie == spezie &amp; 
+                 conjoint_prediction$Tempo_di_Preparazione == tempo &amp; 
+                 conjoint_prediction$Formato_Confezione == formato, ] 
+   
+  if (nrow(filtro) == 0) { 
+    return(&quot;Nessuna corrispondenza trovata.&quot;) 
+  } 
+   
+  punteggio &lt;- filtro$Prediction 
+  classifica &lt;- rank(-conjoint_prediction$Prediction)  
+  posizione &lt;- classifica[conjoint_prediction$Prediction == punteggio] 
+  totale &lt;- nrow(conjoint_prediction) 
+   
+  return(paste(&quot;Rating:&quot;, punteggio, &quot;- Position:&quot;, posizione, &quot;out of&quot;, totale)) 
+} 
+</span><span class="s0">#%% md 
+</span><span class="s1">Based on the results of the conjoint analysis, where the **&quot;Doppia&quot;** format achieved the highest scores keeping other combinations of attributes fixed, we will consider this format as the standard for all other attribute combinations moving forward. 
+</span><span class="s0">#%% md 
+</span><span class="s1">- &lt;a href=&quot;https://www.marepiusrl.com/portfolio-item/salmone-allo-spiedo-con-panko-alle-erbe-aromatiche/&quot; style=&quot;color:black;&quot;&gt; 🔗:  SALMONE ALLO SPIEDO CON PANKO ALLE ERBE AROMATICHE&lt;/a&gt; 
+ 
+</span><span class="s0">#%% 
+</span><span class="s2">find_rating(&quot;Salmone&quot;, &quot;Panko&quot;, &quot;SalviaRosmarino&quot;, &quot;MenoDi8&quot;, &quot;Doppia&quot;) 
+</span><span class="s0">#%% md 
+</span><span class="s1">- &lt;a href=&quot;https://www.marepiusrl.com/portfolio-item/spiedino-di-gambero-argentino-sgusciato-gratinato/&quot; style=&quot;color:black;&quot;&gt; 🔗: SPIEDINO DI GAMBERO ARGENTINO SGUSCIATO GRATINATO&lt;/a&gt;  
+</span><span class="s0">#%% 
+</span><span class="s2">find_rating(&quot;Gambero&quot;, &quot;Gratinato&quot;, &quot;PrezzemoloBasilico&quot;, &quot;MenoDi8&quot;, &quot;Doppia&quot;) 
+</span><span class="s0">#%% md 
+</span><span class="s1">- &lt;a href=&quot;https://www.marepiusrl.com/portfolio-item/spiedino-di-filetto-di-calamaro-gratinato/&quot; style=&quot;color:black;&quot;&gt;🔗: SPIEDINO DI FILETTO DI CALAMARO PATAGONICO GRATINATO&lt;/a&gt; 
+</span><span class="s0">#%% 
+</span><span class="s2">find_rating(&quot;Calamaro&quot;, &quot;Gratinato&quot;, &quot;PrezzemoloBasilico&quot;, &quot;8-15&quot;, &quot;Doppia&quot;) 
+</span><span class="s0">#%% md 
+</span><span class="s1">- &lt;a href=&quot;https://www.marepiusrl.com/portfolio-item/arrosticini-di-salmone-gratinati/&quot; style=&quot;color:black;&quot;&gt; 🔗: ARROSTICINI DI SALMONE GRATINATI&lt;/a&gt; 
+</span><span class="s0">#%% 
+</span><span class="s2">find_rating(&quot;Salmone&quot;, &quot;Gratinato&quot;, &quot;PrezzemoloBasilico&quot;, &quot;8-15&quot;, &quot;Doppia&quot;) 
+</span><span class="s0">#%% md 
+</span><span class="s1">- &lt;a href=&quot;https://www.marepiusrl.com/portfolio-item/spiedino-di-gambero-argentina/&quot; style=&quot;color:black;&quot;&gt; 🔗: SPIEDINO DI GAMBERO ARGENTINO SGUSCIATO&lt;/a&gt;  
+</span><span class="s0">#%% 
+</span><span class="s2">find_rating(&quot;Gambero&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;MenoDi8&quot;, &quot;Doppia&quot;) 
+</span><span class="s0">#%% md 
+</span><span class="s1">- &lt;a href=&quot;https://www.marepiusrl.com/portfolio-item/spiedino-di-calamro-patagonia-rustico-xl/&quot; style=&quot;color:black;&quot;&gt;🔗: SPIEDINO DI CALAMARO PATAGONICO RUSTICO&lt;/a&gt;  
+</span><span class="s0">#%% 
+</span><span class="s2">find_rating(&quot;Calamaro&quot;, &quot;Nessuna&quot;, &quot;Nessuna&quot;, &quot;8-15&quot;, &quot;Doppia&quot;) 
+</span><span class="s0">#%% md 
+</span><span class="s1">Comparing the existing MarePiù products with the best-performing product from the conjoint analysis, we found that the **top product is already part of the catalog**. This simplifies the process of extending it to the B2C market. 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+#### **3.2.4 Attributes' Influences** 
+</span><span class="s0">#%% md 
+</span><span class="s1">In our survey, we asked respondents which factors they considered most important when making their choice, and we compared these results with the **importance weights** of the attributes obtained from the conjoint analysis. 
+</span><span class="s0">#%% 
+</span><span class="s2">conjoint_weights &lt;- data.frame( 
+  major_influences = c(&quot;Tipo_di_Pesce&quot;, &quot;Panatura&quot;, &quot;Spezie&quot;, &quot;Tempo_di_Preparazione&quot;, &quot;Formato_Confezione&quot;), 
+  IW = c(0.480, 0.063, 0.098, 0.078, 0.281) 
+) 
+ 
+influences &lt;- filtered_survey_raw %&gt;% 
+  select(major_influences) %&gt;%             
+  separate_rows(major_influences, sep = &quot;;&quot;) %&gt;%   
+  count(major_influences, sort = TRUE) %&gt;%    
+  mutate(percentuale = round(n / sum(n) * 100, 2)) %&gt;% 
+  slice(-n()) %&gt;% 
+  mutate( 
+    major_influences = case_when( 
+      major_influences == &quot;Tipo di pesce utilizzato per lo spiedino surgelato&quot; ~ &quot;Tipo_di_Pesce&quot;, 
+      major_influences == &quot;Presenza e tipo di panatura&quot; ~ &quot;Panatura&quot;, 
+      major_influences == &quot;Presenza e combinazione di spezie&quot; ~ &quot;Spezie&quot;, 
+      major_influences == &quot;Tempo di preparazione&quot; ~ &quot;Tempo_di_Preparazione&quot;, 
+      major_influences == &quot;Formato confezione&quot; ~ &quot;Formato_Confezione&quot;, 
+      TRUE ~ major_influences 
+  )) 
+ 
+final_table &lt;- influences %&gt;% 
+  left_join(conjoint_weights, by = &quot;major_influences&quot;) %&gt;% 
+  rename(&quot;Survey percentage&quot; = percentuale, &quot;Conjoint weights&quot; = IW) %&gt;% select(-n) 
+ 
+final_table 
+</span><span class="s0">#%% md 
+</span><span class="s1">The findings were as follows: 
+ 
+- *Fish Type*: the most relevant attribute for consumers when making their choice, which is also confirmed by the conjoint analysis. 
+   
+- *Panatura*: this was ranked as the second most important factor by consumers. However, the conjoint results do not confirm this, as it was considered the least important attribute. 
+ 
+- *Packaging Format, Spices, and Cooking Time*: according to consumers, these were the least relevant factors in their decision-making process. This result is also validated by the conjoint analysis. 
+</span><span class="s0">#%% md 
+</span>
+
+<span class="s1">### **3.3 Market Share Estimation** 
+</span><span class="s0">#%% md 
+</span><span class="s1">Building on the previous analysis, we aim to evaluate the hypothetical market share that different products currently available within the company would achieve if launched in the market. 
+</span><span class="s0">#%% md 
+</span><span class="s1">#### **3.3.1 Market shares using the share-of-preference rule** 
+</span><span class="s0">#%% 
+</span><span class="s2">profiles &lt;- profiles.all %&gt;% slice(c(4,10,12,32,38,54)) 
+profiles 
+</span><span class="s0">#%% md 
+</span><span class="s1">This table contains a subset of **6 product profiles**, each defined by a combination of fish type, breading, spices, preparation time, and packaging format. This selection will be used to estimate consumer preferences and market share. 
+</span><span class="s0">#%% 
+</span><span class="s2">predict(conjoint_total, profiles) %&gt;% arrange(desc(Prediction)) %&gt;% mutate(Perc=Prediction/sum(Prediction)*100) 
+</span><span class="s0">#%% md 
+</span><span class="s1">This table presents the predicted preference scores for the selected product profiles,ranked in descending order. The 'Perc' column represents the estimated market share, calculated as the proportion of total preference. Higher 'Prediction' values indicate stronger consumer preference for that product. 
+ 
+The most preferred product is **'Gambero Gratinato with Prezzemolo and Basilico'** with a **19.03%** market share, while products without breading and spices tend to have lower preference scores. 
+These insights help identify the most competitive product combinations for the market. 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+#### **3.3.2 Creating a competitive market scenario** 
+</span><span class="s0">#%% md 
+</span><span class="s1">Suppose we are evaluating whether to introduce the new product with the highest utility: **'Gambero Gratinato with Prezzemolo and Basilico'** into B2C market. 
+ 
+To simulate the competitive landscape, since we can't get real data about competitors, we assume that two competitor products are already present in the market anf we randomly select them. 
+ 
+These **competitor products** will be used in the market simulation. 
+</span><span class="s0">#%% 
+</span><span class="s2">set.seed(12) 
+random_num2 &lt;- sample(1:243,2) 
+random_num2 
+</span><span class="s0">#%% 
+</span><span class="s2">competitor_profiles &lt;- profiles.all %&gt;% slice(c(random_num2)) 
+rownames(competitor_profiles) &lt;- c(&quot;Prod A&quot;,&quot;Prod B&quot;)  
+competitor_profiles 
+</span><span class="s0">#%% md 
+</span><span class="s1">This table displays a selection of competitor products currently available on the market, chosen at random from the complete dataset.  
+ 
+The second table shows their predicted preference scores and estimated market shares: 'Prod A' holds a slightly higher market share (52.92%) compared to 'Prod B'. 
+</span><span class="s0">#%% 
+</span><span class="s2">predict(conjoint_total, competitor_profiles) %&gt;% arrange(desc(Prediction)) %&gt;% mutate(Perc=Prediction/sum(Prediction)*100) 
+</span><span class="s0">#%% 
+</span><span class="s2">profiles.all %&gt;% slice(c(38)) 
+</span><span class="s0">#%% md 
+</span><span class="s1">In this market scenario, 'Prod MarePiù' represents the new product to be launched. 
+</span><span class="s0">#%% 
+</span><span class="s2">market_sim &lt;- profiles.all %&gt;% slice(c(random_num2, 38)) 
+rownames(market_sim) &lt;- c(&quot;Prod A&quot;,&quot;Prod B&quot;,&quot;Prod MarePiù&quot;)  
+ 
+market_sim 
+</span><span class="s0">#%% 
+</span><span class="s2">competitor &lt;- predict(conjoint_total, market_sim) %&gt;% arrange(desc(Prediction)) %&gt;% mutate(Perc=Prediction/sum(Prediction)*100) 
+  
+competitor 
+</span><span class="s0">#%% md 
+</span><span class="s1">This table presents the estimated market share for the new product ('Prod MarePiù') compared to existing competitors. 
+ 
+  - *'Prod MarePiù'* (Gambero Gratinato with Prezzemolo and Basilico) achieves the **highest market share** (37.91%), confirming its strong attractiveness to consumers.   
+  
+This result suggest that introducing 'Prod MarePiù' could be a strategically  advantageous decision, offering a more attractive option than existing competitors. 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+#### **3.3.3 Market shares using the first-choice rule** 
+</span><span class="s0">#%% md 
+</span><span class="s1">Before proceeding with the conjoint analysis using the first-choice rule, we need to prepare the data in order to be able to performe this analysis. To do this, we group the data by respondent and calculates essential statistics such as the number of observations and the standard deviation of the ratings to assess response variability.  
+</span><span class="s0">#%% 
+</span><span class="s2">check_respondents &lt;- conjoint_data %&gt;% 
+  group_by(id_respondent) %&gt;% 
+  summarise( 
+    n_osservazioni             = n(),                                    
+    sd_rating                  = sd(Rating, na.rm = TRUE),               
+    n_panatura                 = n_distinct(Panatura),                   
+    n_tipo_di_pesce            = n_distinct(Tipo_di_Pesce),              
+    n_tempo_di_preparazione    = n_distinct(Tempo_di_Preparazione),      
+    n_formato_confezione       = n_distinct(Formato_Confezione),         
+    n_spezie                   = n_distinct(Spezie)                      
+  ) 
+ 
+wrong &lt;- check_respondents %&gt;% 
+  filter( 
+    sd_rating == 0 | 
+    n_panatura == 1 | 
+    n_tipo_di_pesce == 1 | 
+    n_tempo_di_preparazione == 1 | 
+    n_formato_confezione == 1 | 
+    n_spezie == 1 
+  ) 
+ 
+wrong 
+</span><span class="s0">#%% md 
+</span><span class="s1">Since we identified problematic respondents showing a lack of variability in product attributes, we excluded those whose ratings or attributes are invariant. This filtering is crucial to ensure the reliability of the conjoint analysis results. 
+</span><span class="s0">#%% 
+</span><span class="s2">valid_respondents &lt;- check_respondents %&gt;% 
+  filter( 
+    sd_rating &gt; 0, 
+    n_panatura &gt; 1, 
+    n_tipo_di_pesce &gt; 1, 
+    n_tempo_di_preparazione &gt; 1, 
+    n_formato_confezione &gt; 1, 
+    n_spezie &gt; 1 
+  ) %&gt;% 
+  pull(id_respondent) 
+ 
+conjoint_data_valid &lt;- conjoint_data %&gt;% 
+  filter(id_respondent %in% valid_respondents) 
+</span><span class="s0">#%% md 
+</span><span class="s1">We then performed a conjoint analysis by respondent on the validated dataset to analyze individual preferences. 
+</span><span class="s0">#%% 
+</span><span class="s2">conjoint_byrespondent &lt;- conjoint(conjoint_data_valid, 
+                                   rvar = &quot;Rating&quot;, 
+                                   evar = c(&quot;Tipo_di_Pesce&quot;,'Panatura', 'Spezie', 'Tempo_di_Preparazione','Formato_Confezione'), 
+                                   by = &quot;id_respondent&quot;) 
+</span><span class="s0">#%% 
+</span><span class="s2">predicted &lt;- predict(conjoint_byrespondent, market_sim) %&gt;% arrange(desc(Prediction)) 
+</span><span class="s0">#%% 
+</span><span class="s2">predicted &lt;- predicted %&gt;% mutate(Prediction = round(Prediction, 2)) %&gt;% arrange(id_respondent, desc(Prediction))   
+head(predicted) 
+</span><span class="s0">#%% 
+</span><span class="s2">highest_rated &lt;- predicted %&gt;% group_by(id_respondent) %&gt;%  
+  mutate(Ranking = rank(Prediction, ties.method = &quot;first&quot;))   
+highest_rated &lt;- highest_rated %&gt;% arrange(id_respondent, Ranking) 
+head(highest_rated) 
+</span><span class="s0">#%% 
+</span><span class="s2">highest_rated &lt;- highest_rated %&gt;% arrange(id_respondent, Ranking) %&gt;% filter(Ranking == 3) 
+head(highest_rated) 
+</span><span class="s0">#%% md 
+</span><span class="s1">The previous table represents the most popular attribute combinations for each respondents. 
+</span><span class="s0">#%% 
+</span><span class="s2">options(dplyr.summarise.inform = FALSE)  
+market_share &lt;- highest_rated %&gt;% group_by(Tipo_di_Pesce, Panatura, Spezie, Tempo_di_Preparazione, Formato_Confezione) %&gt;% 
+    summarise(Num = n(), Share = n()/nrow(highest_rated)*100) %&gt;% arrange(desc(Num)) %&gt;% 
+    as.data.frame() 
+     
+rownames(market_share) &lt;- c(&quot;Prod MarePiù&quot;, &quot;Prod B&quot;, &quot;Prod A&quot;) 
+ 
+market_share 
+</span><span class="s0">#%% md 
+</span><span class="s1">The table reveals that 'Prod MarePiù' dominates the market with a **57.47%** share, followed by 'Prod B' at **21.84%**, while 'Prod A' holds the smallest share at **20.69%**.  
+ 
+This suggests that, in this scenario, Marepiù would likely launch the product since these results indicate a good market potential. 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+### **3.4 Potential Customers Analysis** 
+</span><span class="s0">#%% md 
+</span><span class="s1">Since we have obtained a generally low rating in the conjoint analysis, we want to analyze the average scores given by each respondent to better understand this outcome. 
+</span><span class="s0">#%% 
+</span><span class="s2">avg_rating &lt;- conjoint_data %&gt;% 
+  group_by(id_respondent) %&gt;% 
+  summarise(average_rating = mean(Rating, na.rm = TRUE)) %&gt;% 
+  arrange(average_rating) 
+ 
+head(avg_rating) 
+</span><span class="s0">#%% md 
+</span><span class="s1">This table shows that many respondents gave low ratings for all combinations, resulting in a very low average rating (some even gave all zero). 
+ 
+We are now trying to filter out respondents with an average rating below 30, which correspond to the respondents, who would purchase the product with a probability lower than 30%.  
+This suggests they are unlikely to purchase any of the offered options, meaning they are not part of our target market. By removing them, we can focus our analysis on respondents who have shown interest in at least some product combinations. This helps us to obtain more meaningful insights for product optimization and marketing strategies. 
+</span><span class="s0">#%% 
+</span><span class="s2">df_filtered &lt;- conjoint_data %&gt;% 
+  group_by(id_respondent) %&gt;% 
+  summarise(average_rating = mean(Rating, na.rm = TRUE)) %&gt;% 
+  filter(average_rating &gt; 30) %&gt;% 
+  arrange(desc(average_rating)) 
+</span><span class="s0">#%% md 
+</span><span class="s1">We run again the Conjoint Analysis with this new dataset: 
+</span><span class="s0">#%% 
+</span><span class="s2">conjoint_data2 &lt;- conjoint_data %&gt;% 
+  semi_join(df_filtered, by = &quot;id_respondent&quot;)  
+</span><span class="s0">#%% 
+</span><span class="s2">conjoint_data2$Tipo_di_Pesce &lt;- as.factor(conjoint_data2$Tipo_di_Pesce) 
+conjoint_data2$Panatura &lt;- as.factor(conjoint_data2$Panatura) 
+conjoint_data2$Spezie &lt;- as.factor(conjoint_data2$Spezie) 
+conjoint_data2$Tempo_di_Preparazione &lt;- as.factor(conjoint_data2$Tempo_di_Preparazione) 
+conjoint_data2$Formato_Confezione&lt;- as.factor(conjoint_data2$Formato_Confezione) 
+</span><span class="s0">#%% 
+</span><span class="s2">conjoint_total2 &lt;- conjoint(conjoint_data2, rvar=&quot;Rating&quot;, evar=c(&quot;Tipo_di_Pesce&quot;, &quot;Panatura&quot;, &quot;Spezie&quot;, &quot;Tempo_di_Preparazione&quot;, &quot;Formato_Confezione&quot;)) 
+</span><span class="s0">#%% 
+</span><span class="s2">summary(conjoint_total2) 
+</span><span class="s0">#%% 
+</span><span class="s2">conjoint_prediction2 &lt;- predict(conjoint_total2, profiles.all) %&gt;% arrange(desc(Prediction)) 
+head(conjoint_prediction2) 
+</span><span class="s0">#%% md 
+</span><span class="s1">We can see a noticeable improvement in the highest rating, **from 52.89 to 70.38**. 
+ 
+By analyzing the variance of the two conjoint processes we can add some considerations: 
+</span><span class="s0">#%% 
+</span><span class="s2"># Variance of the ratings of the first conjoint analysis 
+variance_prediction &lt;- var(conjoint_prediction$Prediction, na.rm = TRUE) 
+print(variance_prediction) 
+</span><span class="s0">#%% 
+</span><span class="s2"># Variance of the ratings of the second conjoint analysis (without respondents who have avg_rating &lt;= 30) 
+variance_prediction &lt;- var(conjoint_prediction2$Prediction, na.rm = TRUE) 
+print(variance_prediction) 
+</span><span class="s0">#%% md 
+</span><span class="s1">After removing respondents with an average rating lower than 30, the variance of the predicted ratings increased **from 16.9 to 22.4**. 
+A higher variance indicates that preferences among profiles are now more distinct. 
+ 
+The increased variance in the second conjoint analysis suggests that the remaining data reveal more defined consumer preferences, leading to a more precise understanding of key decision drivers. 
+</span><span class="s0">#%% 
+</span><span class="s2">plot(conjoint_total2) 
+</span><span class="s0">#%% 
+</span><span class="s2">conjoint_weights &lt;- data.frame( 
+  major_influences = c(&quot;Tipo_di_Pesce&quot;, &quot;Panatura&quot;, &quot;Spezie&quot;, &quot;Tempo_di_Preparazione&quot;, &quot;Formato_Confezione&quot;), 
+  IW = c(0.307, 0.170, 0.142, 0.075, 0.306) 
+) 
+ 
+influences &lt;- filtered_survey_raw %&gt;% 
+  select(major_influences) %&gt;%             
+  separate_rows(major_influences, sep = &quot;;&quot;) %&gt;%   
+  count(major_influences, sort = TRUE) %&gt;%    
+  mutate(percentuale = round(n / sum(n) * 100, 2)) %&gt;% 
+  slice(-n()) %&gt;% 
+  mutate( 
+    major_influences = case_when( 
+      major_influences == &quot;Tipo di pesce utilizzato per lo spiedino surgelato&quot; ~ &quot;Tipo_di_Pesce&quot;, 
+      major_influences == &quot;Presenza e tipo di panatura&quot; ~ &quot;Panatura&quot;, 
+      major_influences == &quot;Presenza e combinazione di spezie&quot; ~ &quot;Spezie&quot;, 
+      major_influences == &quot;Tempo di preparazione&quot; ~ &quot;Tempo_di_Preparazione&quot;, 
+      major_influences == &quot;Formato confezione&quot; ~ &quot;Formato_Confezione&quot;, 
+      TRUE ~ major_influences 
+  )) 
+ 
+final_table &lt;- influences %&gt;% 
+  left_join(conjoint_weights, by = &quot;major_influences&quot;) %&gt;% 
+  rename(&quot;Survey percentage&quot; = percentuale, &quot;Conjoint weights&quot; = IW) %&gt;% select(-n) 
+ 
+final_table 
+</span><span class="s0">#%% md 
+</span><span class="s1">- **Tipo di Pesce** is the most influential factor.   
+- **Formato Confezione** has some importance for the respondents as confirmed in the conjoint weights.   
+- **Panatura** is highly relevant in the survey but this importance is not enough highlighted in the conjoint results.   
+- **Tempo di Preparazione** is the least important, showing it’s not a priority for consumers.   
+</span><span class="s0">#%% md 
+</span><span class="s1">To conclude this part of the analysis, we will once again examine the ratings and positions following the conjoint analysis predictions for the products in the B2B catalog in order to assess their potential in the B2C market. 
+</span><span class="s0">#%% 
+</span><span class="s2">options(dplyr.summarise.inform = FALSE)  
+market_share &lt;- highest_rated %&gt;% group_by(Tipo_di_Pesce, Panatura, Spezie, Tempo_di_Preparazione, Formato_Confezione) %&gt;% 
+    summarise(Num = n(), Share = n()/nrow(highest_rated)*100) %&gt;% arrange(desc(Num)) %&gt;% 
+    as.data.frame() 
+     
+rownames(market_share) &lt;- c(&quot;Prod 1&quot;, &quot;Prod 2&quot;, &quot;Prod 3&quot;) 
+ 
+market_share 
+</span><span class="s0">#%% 
+</span><span class="s2">prediction2 &lt;- predict(conjoint_total2, profiles) %&gt;% arrange(desc(Prediction)) 
+prediction2 
+</span><span class="s0">#%% 
+</span><span class="s2">prediction2 &lt;- prediction2 %&gt;% 
+  mutate(Position = match(Prediction, conjoint_prediction2$Prediction)) 
+prediction2 
+</span><span class="s0">#%% md 
+</span><span class="s1">In the end, although the most appreciated products remain the same, there are noticeable differences in their overall position (e.g., the top combination already produced is no longer the most preferred overall). 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+ 
+## **4. Choice-Based Conjoint Analysis**  
+</span><span class="s0">#%% md 
+</span><span class="s1">In our previous study, we conducted a **Rating-Based Conjoint Analysis** (RBC) to evaluate consumer preferences. While this method provided valuable insights, it has certain limitations, particularly in capturing real-world decision-making behavior. To enhance the robustness of our findings, we are now exploring the use of **Choice-Based Conjoint Analysis** (CBC). 
+</span><span class="s0">#%% md 
+</span><span class="s1">#### **3.4.1. Survey Design and Data Collection** 
+ 
+The survey design for the Choice-Based Conjoint (CBC) Analysis was developed using **Sawtooth Software**, ensuring a structured approach. To maintain consistency and facilitate comparison with the previous Rating-Based Conjoint (RBC) study, we retained the **same attributes and levels**. 
+ 
+Sawtooth recommended selecting **between 11 and 17 choice tasks**, and we opted for *12*, balancing respondent engagement and data robustness. Additionally, we set each task to include **3 choice alternatives**, a common practice that helps simulate realistic decision-making without overwhelming participants. 
+ 
+This is an example of how the survey looks: 
+ 
+ 
+![Esempio Survey](images/surveyCBC.jpeg) 
+ 
+ 
+For this CBC section, we relied on a convenience sample consisting of our survey designers and a few acquaintances, resulting in **21 responses**. This approach was not intended for drawing definitive conclusions but rather to assess the efficiency of the method and evaluate its feasibility for future studies. 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+#### **3.4.2. Analysis of Results** 
+ 
+At first, we exported the summary of **utility** for each level of each attribute. 
+</span><span class="s0">#%% 
+</span><span class="s2">utilityCBC &lt;- read_excel(&quot;CBC/CBC1_Attribute_Summary.xlsx&quot;) 
+utilityCBC 
+</span><span class="s0">#%% md 
+</span><span class="s1">The CBC results show the utility values assigned to different attribute levels. Higher utility values indicate stronger preferences. Key findings: 
+ 
+- **Panatura:** *Panko* and *Gratinati* are preferred over *Nessuna Panatura*.   
+- **Tipo di Pesce:** *Gambero* and *Salmone* have positive utility, while *Calamaro* is the least preferred.   
+- **Tempo di Preparazione:** Shorter times are preferred, while longer times are less desirable.   
+- **Formato Confezione:** *Monoporzione* has lower utility compared to larger formats.   
+- **Spezie:** *Salvia e Rosmarino* is the most favored, while *Nessuna Spezia* are the least preferred.   
+ 
+Respondents show a clear preference for **pre-breaded options, shrimp or salmon, quick preparation, and strong seasoning**. 
+ 
+Now, we move on with analysis checking attribute importances and comparing it with Importance Weights computed in RBC. 
+ 
+![Importance_attributes](images/IW.jpg) 
+ 
+Comparing RBC and CBC results, we get following results: 
+ 
+1. **Tipo di Pesce (Type of Fish)**   
+   - RBC: 0.480 (48.0%)   
+   - CBC: 31.84%   
+   - In both methods, &quot;Tipo di Pesce&quot; is the most important attribute, but RBC assigns it a significantly higher importance compared to CBC.   
+ 
+2. **Formato Confezione (Package Format)**   
+   - RBC: 0.281 (28.1%)   
+   - CBC: 19.92%   
+   - This attribute ranks second in both methods, though CBC gives it slightly lower importance.   
+ 
+3. **Panatura (Breading)**   
+   - RBC: 0.063 (6.3%)   
+   - CBC: 16.72%   
+   - A major difference is observed here: CBC considers &quot;Panatura&quot; more important than RBC does.   
+ 
+4. **Tempo di Preparazione (Preparation Time)**   
+   - RBC: 0.078 (7.8%)   
+   - CBC: 18.26%   
+   - Similar to &quot;Panatura,&quot; CBC assigns much greater importance to this attribute than RBC.   
+ 
+5. **Spezie (Spices)**   
+   - RBC: 0.098 (9.8%)   
+   - CBC: 13.27%   
+   - The difference between the two methods is less pronounced for this attribute.   
+ 
+Both methods identify &quot;Tipo di Pesce&quot; and &quot;Formato Confezione&quot; as the most influential attributes. On the other hand, CBC distributes importance more evenly across all attributes, assigning greater relevance to &quot;Panatura&quot; and &quot;Tempo di Preparazione.&quot; These discrepancies suggest that RBC and CBC may capture consumer preferences differently, potentially due to variations in the underlying statistical models or survey methodologies. 
+</span><span class="s0">#%% md 
+</span><span class="s1">#### **3.4.3. Market Shares** 
+ 
+ 
+To estimate the market shares of potential B2C products, we used **Sawtooth Software**.  
+ 
+ 
+As before, we included **six existing B2B products** in the simulation to assess their potential appeal in the B2C market.   
+ 
+ 
+The table below presents the **Share of Preference** for each product considered:   
+ 
+ 
+| Product  | Share of Preference | Panatura  | Tipo di Pesce | Tempo di Preparazione | Formato Confezione | Spezie                 | 
+|----------|--------------------|----------|---------------|-----------------------|---------------------|------------------------| 
+| Product1 | **33.28%**          | Panko    | Salmone       | Meno di 8             | Doppia porzione     | Salvia e rosmarino     | 
+| Product2 | **29.84%**          | Gratinati| Gambero       | Meno di 8             | Doppia porzione     | Prezzemolo e basilico  | 
+| Product3 | **11.10%**          | Gratinati| Calamaro      | Tra 8 e 15            | Doppia porzione     | Prezzemolo e basilico  | 
+| Product4 | **14.33%**          | Gratinati| Salmone       | Tra 8 e 15            | Doppia porzione     | Prezzemolo e basilico  | 
+| Product5 | **5.19%**           | Nessuna  | Gambero       | Meno di 8             | Doppia porzione     | Nessuna                | 
+| Product6 | **6.26%**           | Nessuna  | Calamaro      | Tra 8 e 15            | Doppia porzione     | Nessuna                | 
+ 
+Key takeaways: 
+1. **Product1 and Product2** dominate the market, together capturing over 63% of preferences.   
+2. **Panatura and Tipo di Pesce** seem to influence preference significantly, as the top two products have different combinations of these attributes.   
+3. **Formato Confezione** remains consistent across all products (Doppia Porzione), suggesting that this is not a differentiating factor in preference.   
+4. **Spezie** and **Tempo di Preparazione** contribute but appear to have a secondary effect compared to the main ingredients.   
+ 
+ 
+Then, we tried to compute market shares using the products included in previous analysis of competitors market scenario. This led to the following results: 
+ 
+![Market shares](images/CBC_marketshares.png) 
+ 
+The two methodologies yield different market share results, influenced by both the approach and sample size. In the **Rating-Based Conjoint (RBC)** (90 respondents), **ProdMarePiù** captures **37.91%**, while **Product A** and **Product B** follow closely with **32.86%** and **29.23%**, respectively. In contrast, the **Choice-Based Conjoint (CBC)** (21 respondents) shows a stronger preference for **ProdMarePiù** (**54.17%**), with **Product A at 30.16%** and **Product B at 15.66%**. The **smaller CBC sample size may amplify differences**, while RBC distributes shares more evenly due to rating-based evaluations. Despite this, **CBC better reflects real-world choices**, making it more predictive of actual consumer behavior. 
+ 
+ 
+Overall, using CBC we capture a **greater variability** in share of preferences and this results in **clearer insights**. 
+ 
+These insights will guide strategic decisions on product positioning and marketing efforts for a potential B2C launch.   
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+## **5. Conclusion** 
+For the **Conjoint Analysis for MarePiù**, we conducted a survey that revealed a very low average rating for skewers. Although 95 out of 122 respondents do purchase frozen fish, skewers do not appear to be particularly appealing, as indicated by the large number of zero ratings, presenting a **significant limitation** to our analysis. 
+ 
+Nevertheless, we continued with further conjoint analysis which highlighted: 
+- **Tipo di Pesce**: *Gambero* and *Salmone* are the most relevant types of fish, with *Calamaro* being less preferred. This attribute is the one to which consumers have given the most importance in their choices. 
+- **Panatura**: from the conjoint, it is the least important attribute, but this does not coincide with what was stated by the respondents in the survey. The most appreciated breading is *gratinato*. 
+- **Formato Confezione, Spezie, and Tempo di Preparazione**: these have intermediate utility and respectively the preferred ones are '*Doppia*', '*Prezzemolo e Basilico* and '*Meno di 8 Minuti*'. 
+ 
+The **highest utility score** for all bundles recorded was **52.89**, emphasizing the need to acknowledge the limitations of our data. Particularly, the **low appeal of skewers** suggests that removing extremely high scores could refine the insights and provide a more accurate representation of consumer preferences. We tried to *exclude respondents with an average rating below 30*, which helped us understand whether their presence negatively influenced overall results. 
+ 
+Moreover, we analyzed the **importance of existing products** considering all responses (initial conjoint) identifying **'Gambero Gratinato con Prezzemolo e Basilico pronto in meno di 8 minuti e venduta in confezione doppia'** as the best-performing option in terms of overall preference. It could be convenient for the company to introduce it to B2C as it would not entail excessive costs being already in production. 
+ 
+Subsequently, to test this hypothesis, we used **Market Share forecasts** computed through the conjoint. We simulated the market, lacking access to competitor information. The product shows good positioning under both evaluation methods, which were the *share-of-rule* and *first-choice rule* preferences. 
+ 
+Finally, to consider the bias in our data, to further validate these findings, we also explored a **Choice-Based Conjoint (CBC) analysis**, even with fewer respondents. This offers a more precise measure of consumer preferences and can support strategic decisions regarding product positioning. 
+</span><span class="s0">#%% md 
+</span><span class="s1">--- 
+</span><span class="s0">#%% 
+</span></pre>
+</body>
+</html>
