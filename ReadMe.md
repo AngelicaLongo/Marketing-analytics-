@@ -1,5 +1,12 @@
 # MAREPIÙ - AN ANALYSIS OF B2C MARKET OPPORTUNITIES
 
+### Marketing Analytics, Data Science for Economics, Unimi
+
+### Contributors:
+[Melissa Rizzi](https://github.com/melissarizzi), [Loris Palmarin](https://github.com/lorispalmarin), [Mariasilvia Pancione](https://github.com/mariasilviapancione)
+[Angelica Longo](https://github.com/AngelicaLongo), [Paola Loi](https://github.com/Paolaloi), [Melany Gomez Herrada](https://github.com/GHMelany)
+[Elisa Rosa](https://github.com/elisarosa01), [Sara Miraglia](https://github.com/Kakarum), [Sara Peri](https://github.com/ssssarett)
+
 ## Introduction
 The goal of this analysis is to explore the potential expansion of MarePiù, a company primarily operating in the B2B frozen fish market, into the B2C sector. This study aims to assess the feasibility of this strategic shift by understanding consumer preferences, identifying key market segments, and evaluating the introduction of new products in the market. Through a data-driven approach, the analysis seeks to determine the most relevant product attributes for individual consumers, estimate potential market share, and define the best strategies for entry and growth in the B2C market.
 
