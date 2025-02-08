@@ -3,8 +3,8 @@
 ### Marketing Analytics, Data Science for Economics, Unimi
 
 ### Contributors:
-[Melissa Rizzi](https://github.com/melissarizzi), [Loris Palmarin](https://github.com/lorispalmarin), [Mariasilvia Pancione](https://github.com/mariasilviapancione)
-[Angelica Longo](https://github.com/AngelicaLongo), [Paola Loi](https://github.com/Paolaloi), [Melany Gomez Herrada](https://github.com/GHMelany)
+[Melissa Rizzi](https://github.com/melissarizzi), [Loris Palmarin](https://github.com/lorispalmarin), [Mariasilvia Pancione](https://github.com/mariasilviapancione),
+[Angelica Longo](https://github.com/AngelicaLongo), [Paola Loi](https://github.com/Paolaloi), [Melany Gomez Herrada](https://github.com/GHMelany),
 [Elisa Rosa](https://github.com/elisarosa01), [Sara Miraglia](https://github.com/Kakarum), [Sara Peri](https://github.com/ssssarett)
 
 ## Introduction
